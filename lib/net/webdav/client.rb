@@ -33,7 +33,7 @@ module Net
           file = output_file(local_file_path)
 
           connection = Curl::Easy.new
-          connection.userpwd = curl_credentials if @username.present? && @password.present?
+          connection.userpwd = curl_credentials if @username && @password
           connection.url = full_url(remote_file_path)
           connection.perform
 
