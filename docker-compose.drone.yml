@@ -1,0 +1,18 @@
+version: '2'
+
+services:
+  app:
+    volumes:
+      - .:/app
+      - /bundle:/bundle
+      - ssh-data:/ssh:ro
+
+  web:
+    volumes:
+      - .:/app
+      - /bundle:/bundle
+
+volumes:
+  ssh-data:
+    external:
+      name: ssh_data
