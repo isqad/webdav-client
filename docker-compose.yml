@@ -1,0 +1,20 @@
+version: '2'
+
+services:
+  app:
+    image: abakpress/ruby:$RUBY_IMAGE_TAG
+    environment:
+      - BUNDLE_PATH=/bundle/$DOCKER_RUBY_VERSION
+      - SSH_AUTH_SOCK=/ssh/auth/sock
+    command: bash
+    depends_on:
+      - web
+
+  web:
+    image: abakpress/ruby:$RUBY_IMAGE_TAG
+    expose:
+      - "4567"
+    environment:
+      - BUNDLE_PATH=/bundle/$DOCKER_RUBY_VERSION
+      - SSH_AUTH_SOCK=/ssh/auth/sock
+    command: bundle exec ruby spec/support/timeout_server.rb
