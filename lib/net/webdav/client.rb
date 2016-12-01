@@ -4,7 +4,10 @@ require 'curb'
 module Net
   module Webdav
     class Client
-      attr_reader :host, :username, :password, :url, :http_auth_types
+      # Public: maximum time to execution of request in seconds
+      MAX_TIMEOUT = 30
+
+      attr_reader :host, :username, :password, :url, :http_auth_types, :timeout
 
       def initialize(url, options = {})
         uri = URI.parse(url)
@@ -20,6 +23,8 @@ module Net
         end
 
         @url = URI.join(@host, uri.path)
+
+        @timeout = options.fetch(:timeout, MAX_TIMEOUT)
       end
 
       # Public: HEAD, check if file exists
@@ -70,7 +75,7 @@ module Net
 
           for i in 0..(path_parts.length - 1)
             # if the part part is for a file with an extension skip
-            next if File.extname(path_parts[i]).empty?
+            next unless File.extname(path_parts[i]).empty?
 
             parent_path = path_parts[0..i].join('/')
             url = URI.join(
@@ -126,6 +131,7 @@ module Net
         connection.url = full_url(uri)
         connection.http_auth_types = http_auth_types if http_auth_types
         connection.userpwd = curl_credentials if username && password
+        connection.timeout = timeout
 
         connection
       end

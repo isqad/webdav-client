@@ -40,6 +40,14 @@ RSpec.describe Net::Webdav::Client do
         expect(client.file_exists?(file_path)).to be_truthy
       end
     end
+
+    context 'when timeout of operation reached' do
+      let(:client) { described_class.new(timeout_server, timeout: 1) }
+
+      it do
+        expect { client.file_exists?('/system/foo.txt') }.to raise_error Curl::Err::TimeoutError
+      end
+    end
   end
 
   describe '#get_file' do
@@ -60,6 +68,14 @@ RSpec.describe Net::Webdav::Client do
         expect(File.read(local_file_path)).to eq 'abcd'
       end
     end
+
+    context 'when timed out server' do
+      let(:client) { described_class.new(timeout_server, timeout: 1) }
+
+      it do
+        expect { client.get_file(file_path, local_file_path) }.to raise_error Curl::Err::TimeoutError
+      end
+    end
   end
 
   describe '#put_file' do
@@ -69,7 +85,6 @@ RSpec.describe Net::Webdav::Client do
 
     context 'when put file' do
       before do
-        stub_request(:head, "#{server_url}#{file_path}").to_return(status: 201)
         stub_request(:put, "#{server_url}#{file_path}").to_return(status: 201)
       end
 
@@ -80,12 +95,45 @@ RSpec.describe Net::Webdav::Client do
 
     context 'when bad response' do
       before do
-        stub_request(:head, "#{server_url}#{file_path}").to_return(status: 200)
         stub_request(:put, "#{server_url}#{file_path}").to_return(status: 500)
       end
 
       it do
         expect { client.put_file(file_path, file) }.to raise_error StandardError
+      end
+    end
+
+    context 'when very slow server' do
+      let(:client) { described_class.new(timeout_server, timeout: 1) }
+
+      it do
+        expect { client.put_file(file_path, file) }.to raise_error Curl::Err::TimeoutError
+      end
+    end
+
+    context 'when create_path passed' do
+      before { stub_request(:put, "#{server_url}#{file_path}").to_return(status: 201) }
+
+      context 'when directory does not exists' do
+        before do
+          stub_request(:mkcol, "#{server_url}/#{file_path.split('/')[1]}").to_return(status: 201)
+        end
+
+        it do
+          expect(client.put_file(file_path, file, true)).to eq 201
+          expect(a_request(:mkcol, "#{server_url}/#{file_path.split('/')[1]}")).to have_been_made.once
+        end
+      end
+
+      context 'when directory exists' do
+        before do
+          stub_request(:mkcol, "#{server_url}/#{file_path.split('/')[1]}").to_return(status: 405)
+        end
+
+        it do
+          expect(client.put_file(file_path, file, true)).to eq 201
+          expect(a_request(:mkcol, "#{server_url}/#{file_path.split('/')[1]}")).to have_been_made.once
+        end
       end
     end
   end
@@ -98,6 +146,14 @@ RSpec.describe Net::Webdav::Client do
 
       it do
         expect(client.delete_file(file_path)).to be_truthy
+      end
+    end
+
+    context 'when very slow server' do
+      let(:client) { described_class.new(timeout_server, timeout: 1) }
+
+      it do
+        expect { client.delete_file(file_path) }.to raise_error Curl::Err::TimeoutError
       end
     end
   end
