@@ -127,6 +127,8 @@ module Net
       private
 
       def curl(uri)
+        raise ArgumentError, "Wrong path #{uri}" if uri.to_s.empty? || uri.to_s == '/'.freeze
+
         connection = ::Curl::Easy.new
         connection.url = full_url(uri)
         connection.http_auth_types = http_auth_types if http_auth_types
