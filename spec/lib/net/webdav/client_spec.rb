@@ -156,6 +156,22 @@ RSpec.describe Net::Webdav::Client do
         expect { client.delete_file(file_path) }.to raise_error Curl::Err::TimeoutError
       end
     end
+
+    context 'when empty path' do
+      let(:file_path) { '' }
+
+      before { stub_request(:delete, "#{server_url}#{file_path}").to_return(status: 200) }
+
+      it { expect { client.delete_file(file_path) }.to raise_error ArgumentError }
+    end
+
+    context 'when slash path' do
+      let(:file_path) { '/' }
+
+      before { stub_request(:delete, "#{server_url}#{file_path}").to_return(status: 200) }
+
+      it { expect { client.delete_file(file_path) }.to raise_error ArgumentError }
+    end
   end
 
   describe '#make_directory' do
